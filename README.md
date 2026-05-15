@@ -1,1 +1,4 @@
+# order-management-system
+bla
+
 If you want to add a new migration run: "dotnet ef migrations add migration_name --project ./Infrastructure --startup-project ./WebAPI"
