@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Application/Application.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" />
+  <Project Path="IntegrationTests/IntegrationTests.csproj" Id="dd045254-9e8d-4e21-838b-8e6599a7d03b" />
+  <Project Path="UnitTests/UnitTests.csproj" Id="ecec2c4c-481d-421e-9a3d-0ac71a35232e" />
+  <Project Path="WebAPI/WebAPI.csproj" />
+</Solution>
