@@ -10,6 +10,8 @@ namespace UnitTests.Application
     public class CreateOrderCommandHandlerTests
     {
         private readonly Mock<IOrderRepository> _repositoryMock;
+        private readonly Mock<IOutboxMessageRepository> _outboxMessageRepositoryMock;
+        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly Mock<IEventBus> _eventBusMock;
         private readonly CreateOrderCommandHandler _handler;
 
@@ -17,7 +19,9 @@ namespace UnitTests.Application
         {
             _repositoryMock = new Mock<IOrderRepository>();
             _eventBusMock = new Mock<IEventBus>();
-            _handler = new CreateOrderCommandHandler(_repositoryMock.Object, _eventBusMock.Object);
+            _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _outboxMessageRepositoryMock = new Mock<IOutboxMessageRepository>();
+            _handler = new CreateOrderCommandHandler(_repositoryMock.Object, _outboxMessageRepositoryMock.Object, _unitOfWorkMock.Object, _eventBusMock.Object);
         }
 
         [Fact]
@@ -37,7 +41,7 @@ namespace UnitTests.Application
 
             await _handler.Handle(command, CancellationToken.None);
 
-            _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+            _unitOfWorkMock.Verify(r => r.SaveChangesAsync(), Times.Once);
         }
 
         [Fact]
@@ -102,7 +106,7 @@ namespace UnitTests.Application
                 .Setup(r => r.AddAsync(It.IsAny<Order>()))
                 .Callback(() => callOrder.Add("AddAsync"))
                 .Returns(Task.CompletedTask);
-            _repositoryMock
+            _unitOfWorkMock
                 .Setup(r => r.SaveChangesAsync())
                 .Callback(() => callOrder.Add("SaveChangesAsync"))
                 .ReturnsAsync(1);
