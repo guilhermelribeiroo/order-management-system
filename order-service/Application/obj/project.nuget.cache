@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "qt/4PVpnKJ4=",
+  "dgSpecHash": "HUaijnW/8BA=",
   "success": true,
   "projectFilePath": "D:\\workspace\\order-management-system\\order-service\\Application\\Application.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\guilh\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",
+    "C:\\Users\\guilh\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\12.1.1\\fluentvalidation.dependencyinjectionextensions.12.1.1.nupkg.sha512",
     "C:\\Users\\guilh\\.nuget\\packages\\mediatr\\14.1.0\\mediatr.14.1.0.nupkg.sha512",
     "C:\\Users\\guilh\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
     "C:\\Users\\guilh\\.nuget\\packages\\microsoft.entityframeworkcore\\10.0.5\\microsoft.entityframeworkcore.10.0.5.nupkg.sha512",

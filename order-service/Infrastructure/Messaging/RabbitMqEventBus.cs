@@ -24,8 +24,15 @@ namespace Infrastructure.Messaging
         public async Task Publish<TEvent>(TEvent @event) where TEvent : class
         {
             using var channel = await _connection.CreateChannelAsync();
+
+            await channel.ExchangeDeclareAsync(
+                exchange: "order.exchange",
+                type: ExchangeType.Direct,
+                durable: true);
+
             var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(@event));
-            await channel.BasicPublishAsync(exchange: "",
+
+            await channel.BasicPublishAsync(exchange: "order.exchange",
                                  routingKey: typeof(TEvent).Name,
                                  body: body);
         }
