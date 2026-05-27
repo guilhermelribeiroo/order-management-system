@@ -39,10 +39,5 @@ namespace Infrastructure.Repositories
         {
             _dbSet.Update(entity);
         }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
-        }
     }
 }

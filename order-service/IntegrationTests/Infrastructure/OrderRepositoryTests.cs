@@ -7,16 +7,16 @@ namespace IntegrationTests.Infrastructure
 {
     public class OrderRepositoryTests : IDisposable
     {
-        private readonly OrderDbContext _context;
+        private readonly OrderServiceDbContext _context;
         private readonly OrderRepository _repository;
 
         public OrderRepositoryTests()
         {
-            var options = new DbContextOptionsBuilder<OrderDbContext>()
+            var options = new DbContextOptionsBuilder<OrderServiceDbContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // isolated per test
                 .Options;
 
-            _context = new OrderDbContext(options);
+            _context = new OrderServiceDbContext(options);
             _repository = new OrderRepository(_context);
         }
 

@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Infrastructure.Migrations
 {
-    [DbContext(typeof(OrderDbContext))]
+    [DbContext(typeof(OrderServiceDbContext))]
     [Migration("20260403043550_AddOrderAndOrderItemEntitites")]
     partial class AddOrderAndOrderItemEntitites
     {

@@ -7,9 +7,9 @@ namespace Infrastructure.Repositories
 {
     public class OrderRepository : Repository<Order>, IOrderRepository
     {
-        private readonly OrderDbContext _dbContext;
+        private readonly OrderServiceDbContext _dbContext;
 
-        public OrderRepository(OrderDbContext dbContext) : base(dbContext)
+        public OrderRepository(OrderServiceDbContext dbContext) : base(dbContext)
         {
             _dbContext = dbContext;
         }
