@@ -37,12 +37,8 @@ namespace Infrastructure.Repositories
 
         public void Update(T entity)
         {
+            entity.UpdatedAt = DateTime.UtcNow;
             _dbSet.Update(entity);
-        }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await _context.SaveChangesAsync();
         }
     }
 }

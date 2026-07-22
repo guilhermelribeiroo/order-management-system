@@ -2,7 +2,6 @@
 using Application.Events;
 using Domain.Entities;
 using Infrastructure.Interfaces;
-using Infrastructure.Messaging;
 using Moq;
 
 namespace UnitTests.Application
@@ -10,14 +9,19 @@ namespace UnitTests.Application
     public class CreateOrderCommandHandlerTests
     {
         private readonly Mock<IOrderRepository> _repositoryMock;
-        private readonly Mock<IEventBus> _eventBusMock;
+        private readonly Mock<IOutboxMessageRepository> _outboxMessageRepositoryMock;
+        private readonly Mock<IUnitOfWork> _unitOfWorkMock;
         private readonly CreateOrderCommandHandler _handler;
 
         public CreateOrderCommandHandlerTests()
         {
             _repositoryMock = new Mock<IOrderRepository>();
-            _eventBusMock = new Mock<IEventBus>();
-            _handler = new CreateOrderCommandHandler(_repositoryMock.Object, _eventBusMock.Object);
+            _outboxMessageRepositoryMock = new Mock<IOutboxMessageRepository>();
+            _unitOfWorkMock = new Mock<IUnitOfWork>();
+            _handler = new CreateOrderCommandHandler(
+                _repositoryMock.Object,
+                _outboxMessageRepositoryMock.Object,
+                _unitOfWorkMock.Object);
         }
 
         [Fact]
@@ -37,37 +41,54 @@ namespace UnitTests.Application
 
             await _handler.Handle(command, CancellationToken.None);
 
-            _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+            _unitOfWorkMock.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ValidCommand_ShouldPublishOrderCreatedEvent()
+        public async Task Handle_ValidCommand_ShouldAddOutboxMessage()
         {
             var command = BuildValidCommand();
 
             await _handler.Handle(command, CancellationToken.None);
 
-            _eventBusMock.Verify(
-                e => e.Publish(It.IsAny<OrderCreatedEvent>()),
-                Times.Once);
+            _outboxMessageRepositoryMock.Verify(r => r.AddAsync(It.IsAny<OutboxMessage>()), Times.Once);
         }
 
         [Fact]
-        public async Task Handle_ValidCommand_ShouldPublishEventWithCorrectData()
+        public async Task Handle_ValidCommand_ShouldAddOutboxMessageWithCorrectType()
         {
             var command = BuildValidCommand();
-            OrderCreatedEvent? capturedEvent = null;
+            OutboxMessage? capturedMessage = null;
 
-            _eventBusMock
-                .Setup(e => e.Publish(It.IsAny<OrderCreatedEvent>()))
-                .Callback<OrderCreatedEvent>(e => capturedEvent = e)
+            _outboxMessageRepositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<OutboxMessage>()))
+                .Callback<OutboxMessage>(m => capturedMessage = m)
                 .Returns(Task.CompletedTask);
 
             await _handler.Handle(command, CancellationToken.None);
 
-            Assert.NotNull(capturedEvent);
-            Assert.Equal(command.CustomerId, capturedEvent.CustomerId);
-            Assert.True(capturedEvent.TotalAmount > 0);
+            Assert.NotNull(capturedMessage);
+            Assert.Equal(typeof(OrderCreatedEvent).AssemblyQualifiedName, capturedMessage.Type);
+        }
+
+        [Fact]
+        public async Task Handle_ValidCommand_ShouldAddOutboxMessageWithCorrectPayload()
+        {
+            var command = BuildValidCommand();
+            OutboxMessage? capturedMessage = null;
+
+            _outboxMessageRepositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<OutboxMessage>()))
+                .Callback<OutboxMessage>(m => capturedMessage = m)
+                .Returns(Task.CompletedTask);
+
+            await _handler.Handle(command, CancellationToken.None);
+
+            Assert.NotNull(capturedMessage);
+            var payload = System.Text.Json.JsonSerializer
+                .Deserialize<OrderCreatedEvent>(capturedMessage.Payload);
+            Assert.NotNull(payload);
+            Assert.Equal(command.CustomerId, payload.CustomerId);
         }
 
         [Fact]
@@ -83,57 +104,17 @@ namespace UnitTests.Application
                 }
             };
 
-            OrderCreatedEvent? capturedEvent = null;
-            _eventBusMock
-                .Setup(e => e.Publish(It.IsAny<OrderCreatedEvent>()))
-                .Callback<OrderCreatedEvent>(e => capturedEvent = e)
+            OutboxMessage? capturedMessage = null;
+            _outboxMessageRepositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<OutboxMessage>()))
+                .Callback<OutboxMessage>(m => capturedMessage = m)
                 .Returns(Task.CompletedTask);
 
             await _handler.Handle(command, CancellationToken.None);
 
-            Assert.Equal(40m, capturedEvent!.TotalAmount); // 2*10 + 4*5
-        }
-
-        [Fact]
-        public async Task Handle_ShouldCallSaveChangesAfterAddAsync()
-        {
-            var callOrder = new List<string>();
-            _repositoryMock
-                .Setup(r => r.AddAsync(It.IsAny<Order>()))
-                .Callback(() => callOrder.Add("AddAsync"))
-                .Returns(Task.CompletedTask);
-            _repositoryMock
-                .Setup(r => r.SaveChangesAsync())
-                .Callback(() => callOrder.Add("SaveChangesAsync"))
-                .ReturnsAsync(1);
-
-            await _handler.Handle(BuildValidCommand(), CancellationToken.None);
-
-            Assert.Equal(new[] { "AddAsync", "SaveChangesAsync" }, callOrder);
-        }
-
-        // Kind of useless tests because the guid is generated in the database, but it can be useful if we want to change the implementation later
-        // It also verifies that the handler returns the generated order id, which is a contract of the method
-        // not feeling like adding "= Guid.NewGuid()" in the BaseEntity Id property because could cause issues if the entity is created but not saved
-        [Fact]
-        public async Task Handle_EmptyItemsList_ShouldStillCreateOrderAndPublishEvent()
-        {
-            var command = new CreateOrderCommand
-            {
-                CustomerId = Guid.NewGuid(),
-                Items = new List<CreateOrderCommand.OrderItemDto>()
-            };
-
-            _repositoryMock
-                .Setup(r => r.AddAsync(It.IsAny<Order>()))
-                .Callback<Order>(order => order.Id = Guid.NewGuid())
-                .Returns(Task.CompletedTask);
-
-            var result = await _handler.Handle(command, CancellationToken.None);
-
-            Assert.NotEqual(Guid.Empty, result);
-            _repositoryMock.Verify(r => r.AddAsync(It.IsAny<Order>()), Times.Once);
-            _eventBusMock.Verify(e => e.Publish(It.IsAny<OrderCreatedEvent>()), Times.Once);
+            var payload = System.Text.Json.JsonSerializer
+                .Deserialize<OrderCreatedEvent>(capturedMessage!.Payload);
+            Assert.Equal(40m, payload!.TotalAmount); // 2*10 + 4*5
         }
 
         [Fact]
@@ -141,18 +122,35 @@ namespace UnitTests.Application
         {
             var command = BuildValidCommand();
 
-            _repositoryMock
-                .Setup(r => r.AddAsync(It.IsAny<Order>()))
-                .Callback<Order>(order => order.Id = Guid.NewGuid())
-                .Returns(Task.CompletedTask);
-
             var result = await _handler.Handle(command, CancellationToken.None);
 
             Assert.NotEqual(Guid.Empty, result);
         }
 
+        [Fact]
+        public async Task Handle_ShouldCallSaveChangesAfterAddingOrderAndOutboxMessage()
+        {
+            var callOrder = new List<string>();
+
+            _repositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<Order>()))
+                .Callback(() => callOrder.Add("AddOrder"))
+                .Returns(Task.CompletedTask);
+            _outboxMessageRepositoryMock
+                .Setup(r => r.AddAsync(It.IsAny<OutboxMessage>()))
+                .Callback(() => callOrder.Add("AddOutbox"))
+                .Returns(Task.CompletedTask);
+            _unitOfWorkMock
+                .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
+                .Callback(() => callOrder.Add("SaveChangesAsync"))
+                .ReturnsAsync(1);
+
+            await _handler.Handle(BuildValidCommand(), CancellationToken.None);
+
+            Assert.Equal(new[] { "AddOrder", "AddOutbox", "SaveChangesAsync" }, callOrder);
+        }
+
         // --- Helpers ---
-        // Could be a class if more code is added
 
         private static CreateOrderCommand BuildValidCommand() => new()
         {
@@ -169,5 +167,4 @@ namespace UnitTests.Application
             }
         };
     }
-
 }

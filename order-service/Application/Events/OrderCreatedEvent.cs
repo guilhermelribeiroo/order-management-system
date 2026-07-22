@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Application.Events
+﻿namespace Application.Events
 {
     public class OrderCreatedEvent
     {
