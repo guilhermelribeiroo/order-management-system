@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace Domain.Entities
+﻿namespace Domain.Entities
 {
     public class OutboxMessage : BaseEntity
     {

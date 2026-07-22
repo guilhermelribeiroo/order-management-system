@@ -10,13 +10,14 @@ namespace Infrastructure.Configuration
         {
             builder.ToTable("OrderItems");
             builder.HasKey(i => i.Id);
+            builder.Property(o => o.Id).ValueGeneratedNever();
 
             builder.Property(i => i.ProductId).IsRequired();
             builder.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
             builder.Property(i => i.UnitPrice).IsRequired().HasColumnType("decimal(18,2)");
             builder.Property(i => i.Quantity).IsRequired();
-            builder.Property(i => i.CreatedAt).HasDefaultValueSql("NOW()").IsRequired();
-            builder.Property(i => i.UpdatedAt).HasDefaultValueSql("NOW()").IsRequired();
+            builder.Property(i => i.CreatedAt).IsRequired();
+            builder.Property(i => i.UpdatedAt).IsRequired();
         }
     }
 }

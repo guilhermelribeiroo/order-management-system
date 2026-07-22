@@ -1,4 +1,5 @@
 using Application.Commands;
+using Application.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,17 @@ namespace WebAPI.Controllers
         {
             var orderId = await _mediator.Send(command);
             return Ok(new { OrderId = orderId });
+        }
+
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var order = await _mediator.Send(new GetOrderByIdQuery(id));
+
+            if (order is null)
+                return NotFound();
+
+            return Ok(order);
         }
     }
 }

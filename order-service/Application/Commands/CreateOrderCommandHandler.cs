@@ -1,7 +1,6 @@
 ﻿using Application.Events;
 using Domain.Entities;
 using Infrastructure.Interfaces;
-using Infrastructure.Messaging;
 using MediatR;
 using System.Text.Json;
 
@@ -12,14 +11,15 @@ namespace Application.Commands
         private readonly IOrderRepository _orderRepository;
         private readonly IOutboxMessageRepository _outboxMessageRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IEventBus _eventBus;
 
-        public CreateOrderCommandHandler(IOrderRepository orderRepository, IOutboxMessageRepository outboxMessageRepository, IUnitOfWork unitOfWork, IEventBus eventBus)
+        public CreateOrderCommandHandler(
+            IOrderRepository orderRepository,
+            IOutboxMessageRepository outboxMessageRepository,
+            IUnitOfWork unitOfWork)
         {
             _orderRepository = orderRepository;
             _outboxMessageRepository = outboxMessageRepository;
             _unitOfWork = unitOfWork;
-            _eventBus = eventBus;
         }
 
         public async Task<Guid> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -47,9 +47,7 @@ namespace Application.Commands
             await _outboxMessageRepository.AddAsync(outboxMessage);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await _eventBus.Publish(orderCreatedEvent);
-
             return order.Id;
-        }   
+        }
     }
 }

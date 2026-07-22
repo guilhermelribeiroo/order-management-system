@@ -37,6 +37,7 @@ namespace Infrastructure.Repositories
 
         public void Update(T entity)
         {
+            entity.UpdatedAt = DateTime.UtcNow;
             _dbSet.Update(entity);
         }
     }
